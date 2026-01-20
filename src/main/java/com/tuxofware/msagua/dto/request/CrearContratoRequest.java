@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuxofware.msagua.enums.TipoToma;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Schema(description = "Información requerida para dar de alta un nuevo contrato de agua.")
@@ -27,5 +29,13 @@ public record CrearContratoRequest(
                 example = "DOMESTICA",
                 implementation = TipoToma.class
         )
-        TipoToma tipoToma
+        TipoToma tipoToma,
+
+        @NotNull
+        @Schema(
+                description = "Lectura de toma inicial.",
+                example = "1.00"
+        )
+        BigDecimal lecturaInicial
+
 ) {}

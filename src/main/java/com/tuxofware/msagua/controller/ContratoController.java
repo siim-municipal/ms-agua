@@ -2,7 +2,6 @@ package com.tuxofware.msagua.controller;
 
 import com.tuxofware.msagua.dto.request.CrearContratoRequest;
 import com.tuxofware.msagua.dto.response.ConsumoPeriodoResponse;
-import com.tuxofware.msagua.service.CalculoConsumoService;
 import com.tuxofware.msagua.service.ContratoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URI;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -24,8 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Tag(name = "Agua - Contratos", description = "Gestión de altas y bajas de contratos de servicio de agua potable.")
 public class ContratoController {
-    private final ContratoService service;
-    private final CalculoConsumoService calculoService;
+    private final ContratoService contratoService;
 
     @Operation(
             summary = "Dar de alta un nuevo contrato",
@@ -60,7 +59,7 @@ public class ContratoController {
     })
     @PostMapping
     public ResponseEntity<Void> crearContrato(@Valid @RequestBody CrearContratoRequest request) {
-        UUID id = service.crearContrato(request);
+        UUID id = contratoService.crearContrato(request);
         return ResponseEntity.created(URI.create("/api/v1/contratos/" + id)).build();
     }
 
@@ -72,6 +71,12 @@ public class ContratoController {
             @Parameter(description = "Mes (1-12)", example = "1") @RequestParam int mes,
             @Parameter(description = "Año (YYYY)", example = "2025") @RequestParam int anio) {
 
-        return ResponseEntity.ok(calculoService.obtenerConsumoPeriodo(id, mes, anio));
+        return ResponseEntity.ok(contratoService.obtenerConsumoPeriodo(id, mes, anio));
+    }
+
+    @GetMapping("/existe-por-predio/{predioId}")
+    public ResponseEntity<Map<String, Boolean>> verificarExistencia(@PathVariable UUID predioId) {
+        boolean existe = contratoService.existsByPredioId(predioId);
+        return ResponseEntity.ok(Map.of("existe", existe));
     }
 }

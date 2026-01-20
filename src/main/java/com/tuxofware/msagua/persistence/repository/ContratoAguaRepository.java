@@ -9,9 +9,15 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface ContratoAguaRepository extends JpaRepository<ContratoAgua, UUID> {
+
     List<ContratoAgua> findByPredioId(UUID predioId);
+
+    boolean existsByPredioId(UUID predioId);
+
     Optional<ContratoAgua> findByNumeroMedidor(String numeroMedidor);
+
     Optional<ContratoAgua> findByNumeroMedidorIn(Set<String> medidores);
+
     boolean existsByNumeroMedidor(String numeroMedidor);
 
 }
