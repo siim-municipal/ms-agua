@@ -1,7 +1,9 @@
 package com.tuxofware.msagua.controller;
 
 import com.tuxofware.msagua.dto.request.RegistrarLecturaRequest;
+import com.tuxofware.msagua.dto.response.BatchResult;
 import com.tuxofware.msagua.dto.response.ConsumoResponse;
+import com.tuxofware.msagua.service.LecturaBatchService;
 import com.tuxofware.msagua.service.LecturaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,8 +14,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -24,6 +28,7 @@ import java.util.UUID;
 public class LecturaController {
 
     private final LecturaService lecturaService;
+    private final LecturaBatchService batchService;
 
     @Operation(
             summary = "Registrar lectura de medidor",
@@ -58,5 +63,15 @@ public class LecturaController {
             @Parameter(description = "UUID del contrato a consultar", required = true, example = "550e8400-e29b-41d4-a716-446655440000")
             @RequestParam UUID contratoId) {
         return ResponseEntity.ok(lecturaService.calcularConsumo(contratoId));
+    }
+
+    @Operation(summary = "Carga masiva de lecturas (CSV)", description = "Procesa archivos de handhelds. Valida consistencia y reporta errores por fila.")
+    @PostMapping(value = "/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BatchResult> cargarLecturasBatch(@RequestParam("file") MultipartFile file) {
+        // Validación básica de extensión
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith(".csv")) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(batchService.procesarArchivo(file));
     }
 }
