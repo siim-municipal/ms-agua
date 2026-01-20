@@ -6,41 +6,36 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.UUID;
+
 @Entity
-@Table(name = "lecturas_agua")
-@Data
-@Builder
+@Table(name = "lectura_agua")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class LecturaAgua {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Referencia lógica a ms-padron-unico (No es FK de base de datos)
-    @Column(name = "predio_id", nullable = false)
-    private UUID predioId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contrato_id", nullable = false)
+    private ContratoAgua contrato;
 
-    @Column(name = "fecha_lectura", nullable = false)
+    @Column(nullable = false)
     private LocalDate fechaLectura;
 
-    @Column(name = "lectura_anterior", precision = 12, scale = 2)
-    private BigDecimal lecturaAnterior;
+    @Column(nullable = false,
+            precision = 10, scale = 2,
+            name = "lectura_m3"
+    )
+    private BigDecimal lecturaM3;
 
-    @Column(name = "lectura_actual", nullable = false, precision = 12, scale = 2)
-    private BigDecimal lecturaActual;
-
-    // Este campo se calcula: actual - anterior
-    @Column(name = "consumo_m3", nullable = false, precision = 12, scale = 2)
-    private BigDecimal consumoM3;
-
-    @Column(name = "bimestre")
-    private Integer bimestre;
-
-    @Column(name = "anio")
-    private Integer anio;
-
-    @Column(name = "observaciones")
     private String observaciones;
 }

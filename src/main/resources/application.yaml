@@ -2,6 +2,11 @@ spring:
   application:
     name: ms-agua
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   profiles:
     active: ${PROFILE_SPRING:dev}
 
@@ -17,6 +22,9 @@ spring:
     show-sql: true
     properties:
       hibernate:
+        jdbc:
+          batch_size: 100
+          order_inserts: true
         format_sql: true
         default_schema: tuxtepec
     open-in-view: false
@@ -34,6 +42,24 @@ spring:
           issuer-uri: ${ISSUER_URI_KEYCLOAK:http://localhost:8180/realms/tuxtepec-gob}
           jwk-set-uri: ${JWK_SET_URI_KEYCLOAK:http://keycloak:8180/realms/tuxtepec-gob/protocol/openid-connect/certs}
 
+  cloud:
+    openfeign:
+      httpclient:
+        hc5:
+          enabled: true
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 5000
+
 app:
   security:
     client-id: ${KEYCLOAK_CLIENT_ID:siim-frontend}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/} # Apunta a ms-discovery
+  instance:
+    prefer-ip-address: true # Vital para Docker
