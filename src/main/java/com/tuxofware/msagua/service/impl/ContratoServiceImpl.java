@@ -1,8 +1,10 @@
 package com.tuxofware.msagua.service.impl;
 
 import com.tuxofware.msagua.client.PadronClient;
+import com.tuxofware.msagua.dto.request.CambioEstatusRequest;
 import com.tuxofware.msagua.dto.request.CrearContratoRequest;
 import com.tuxofware.msagua.dto.response.ConsumoPeriodoResponse;
+import com.tuxofware.msagua.dto.response.ContratoResumenResponse;
 import com.tuxofware.msagua.persistence.entity.ContratoAgua;
 import com.tuxofware.msagua.persistence.entity.LecturaAgua;
 import com.tuxofware.msagua.persistence.repository.ContratoAguaRepository;
@@ -28,6 +30,42 @@ public class ContratoServiceImpl implements ContratoService {
     private final LecturaAguaRepository lecturaAguaRepository;
     private final PadronClient padronClient;
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ContratoResumenResponse> listarContratos() {
+        List<ContratoAgua> contratos = contratoAguaRepository.findAll();
+
+        return contratos.stream()
+                .map(this::mapToResumen)
+                .toList();
+    }
+
+    private ContratoResumenResponse mapToResumen(ContratoAgua c) {
+        // 1. Obtener última lectura (Optimizada)
+        // Usamos una consulta ligera que retorne solo el valor numérico, no toda la entidad
+        BigDecimal ultimaLectura = lecturaAguaRepository
+                .findUltimaLecturaValorByContratoId(c.getId())
+                .orElse(c.getLecturaInicial());
+
+        // 2. Mapeo de datos externos (Predio/Propietario)
+        // NOTA: Para evitar llamar a ms-padron N veces (lentitud),
+        // temporalmente enviamos placeholders o el ID.
+        // La solución ideal es agregar columnas 'clave_catastral_snapshot' en la tabla contrato_agua.
+        String claveDisplay = "PREDIO-" + c.getPredioId().toString().substring(0, 8).toUpperCase();
+        String propietarioDisplay = "Ver en Padrón";
+
+        return new ContratoResumenResponse(
+                c.getId(),
+                c.getPredioId(),
+                claveDisplay,       // Aquí iría c.getClaveCatastralSnapshot()
+                propietarioDisplay, // Aquí iría c.getPropietarioSnapshot()
+                c.getNumeroMedidor(),
+                c.getTipoToma().name(),
+                c.getEstatus(),
+                ultimaLectura
+        );
+    }
 
     @Override
     @Transactional
@@ -57,6 +95,28 @@ public class ContratoServiceImpl implements ContratoService {
                 .build();
 
         return contratoAguaRepository.save(contrato).getId();
+    }
+
+    @Override
+    @Transactional
+    public void cambiarEstatus(UUID id, CambioEstatusRequest request) {
+        var contrato = contratoAguaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contrato no encontrado"));
+
+        // Validación simple de idempotencia (si ya tiene ese estatus, no hacemos nada)
+        if (contrato.getEstatus() == request.estatus()) {
+            return;
+        }
+
+        // TODO: Aquí podrías agregar reglas de negocio complejas.
+        // Ej: No se puede "ACTIVAR" un contrato si el predio tiene deuda (requeriría consultar ms-tesoreria)
+
+        contrato.setEstatus(request.estatus());
+
+        // TODO: Si tuvieras un campo de "motivo" o "observaciones" en la entidad, lo actualizarías aquí:
+        // if (request.motivo() != null) contrato.setObservaciones(request.motivo());
+
+        contratoAguaRepository.save(contrato);
     }
 
     @Override
@@ -146,4 +206,5 @@ public class ContratoServiceImpl implements ContratoService {
                 true // Es estimado
         );
     }
+
 }

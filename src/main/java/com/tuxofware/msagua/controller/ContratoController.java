@@ -1,7 +1,9 @@
 package com.tuxofware.msagua.controller;
 
+import com.tuxofware.msagua.dto.request.CambioEstatusRequest;
 import com.tuxofware.msagua.dto.request.CrearContratoRequest;
 import com.tuxofware.msagua.dto.response.ConsumoPeriodoResponse;
+import com.tuxofware.msagua.dto.response.ContratoResumenResponse;
 import com.tuxofware.msagua.service.ContratoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,6 +28,13 @@ import java.util.UUID;
 @Tag(name = "Agua - Contratos", description = "Gestión de altas y bajas de contratos de servicio de agua potable.")
 public class ContratoController {
     private final ContratoService contratoService;
+
+    @Operation(summary = "Listar todos los contratos",
+            description = "Obtiene un resumen de los contratos registrados. Ideal para tableros de gestión.")
+    @GetMapping
+    public ResponseEntity<List<ContratoResumenResponse>> listarContratos() {
+        return ResponseEntity.ok(contratoService.listarContratos());
+    }
 
     @Operation(
             summary = "Dar de alta un nuevo contrato",
@@ -61,6 +71,24 @@ public class ContratoController {
     public ResponseEntity<Void> crearContrato(@Valid @RequestBody CrearContratoRequest request) {
         UUID id = contratoService.crearContrato(request);
         return ResponseEntity.created(URI.create("/api/v1/contratos/" + id)).build();
+    }
+
+    @Operation(
+            summary = "Cambiar estatus del contrato",
+            description = "Permite SUSPENDER, CANCELAR o REACTIVAR un contrato existente."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Estatus actualizado correctamente."),
+            @ApiResponse(responseCode = "404", description = "Contrato no encontrado.", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Transición de estado inválida.", content = @Content)
+    })
+    @PatchMapping("/{id}/estatus")
+    public ResponseEntity<Void> actualizarEstatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody CambioEstatusRequest request) {
+
+        contratoService.cambiarEstatus(id, request);
+        return ResponseEntity.noContent().build(); // 204 No Content es estándar para updates sin body de respuesta
     }
 
     @Operation(summary = "Obtener consumo calculado del periodo",

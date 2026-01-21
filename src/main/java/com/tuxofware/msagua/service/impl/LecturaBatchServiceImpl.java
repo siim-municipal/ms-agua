@@ -2,7 +2,7 @@ package com.tuxofware.msagua.service.impl;
 
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.tuxofware.msagua.dto.projection.UltimaLecturaProjection;
-import com.tuxofware.msagua.dto.request.LecturaCsvRecord;
+import com.tuxofware.msagua.dto.request.LecturaCsvRecordRequest;
 import com.tuxofware.msagua.dto.response.BatchResult;
 import com.tuxofware.msagua.persistence.entity.ContratoAgua;
 import com.tuxofware.msagua.persistence.entity.LecturaAgua;
@@ -38,8 +38,8 @@ public class LecturaBatchServiceImpl implements LecturaBatchService {
 
         try (var reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             // 1. Parsear CSV a Beans
-            List<LecturaCsvRecord> inputs = new CsvToBeanBuilder<LecturaCsvRecord>(reader)
-                    .withType(LecturaCsvRecord.class)
+            List<LecturaCsvRecordRequest> inputs = new CsvToBeanBuilder<LecturaCsvRecordRequest>(reader)
+                    .withType(LecturaCsvRecordRequest.class)
                     .withIgnoreLeadingWhiteSpace(true)
                     .build()
                     .parse();
@@ -48,7 +48,7 @@ public class LecturaBatchServiceImpl implements LecturaBatchService {
 
             // 2. Pre-cargar datos (Bulk Fetch) para evitar N+1
             Set<String> medidores = inputs.stream()
-                    .map(LecturaCsvRecord::numeroMedidor)
+                    .map(LecturaCsvRecordRequest::numeroMedidor)
                     .collect(Collectors.toSet());
 
             // Mapa: NumeroMedidor -> Contrato
@@ -67,7 +67,7 @@ public class LecturaBatchServiceImpl implements LecturaBatchService {
             }
 
             // 3. Procesamiento y Validación In-Memory
-            for (LecturaCsvRecord fila : inputs) {
+            for (LecturaCsvRecordRequest fila : inputs) {
                 try {
                     // Validación A: Contrato existe
                     ContratoAgua contrato = mapaContratos.get(fila.numeroMedidor());

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,9 @@ import java.util.UUID;
 public interface LecturaAguaRepository extends JpaRepository<LecturaAgua, UUID> {
 
     List<LecturaAgua> findTop2ByContratoIdOrderByFechaLecturaDesc(UUID contratoId);
+
+    @Query("SELECT l.lecturaM3 FROM LecturaAgua l WHERE l.contrato.id = :contratoId ORDER BY l.fechaLectura DESC LIMIT 1")
+    Optional<BigDecimal> findUltimaLecturaValorByContratoId(UUID contratoId);
 
     // Obtener la última lectura registrada antes de una fecha dada (o la más reciente en general)
     Optional<LecturaAgua> findFirstByContratoIdOrderByFechaLecturaDesc(UUID contratoId);
